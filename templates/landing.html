@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insurance AI – Explainable &amp; Reliable Premium Prediction</title>
+  <meta name="description" content="AI-powered insurance premium prediction with transparent explanations, prediction reliability and What-If scenarios." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="landing-body">
+
+<!-- ═══ NAVBAR ═══════════════════════════════════════════════════════════════ -->
+<nav class="landing-nav">
+  <a href="{{ url_for('landing') }}" class="landing-logo" id="navLogo">
+    <div class="landing-logo-icon"><i class="bi bi-shield-check"></i></div>
+    Insurance AI
+  </a>
+  <ul class="landing-nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="{{ url_for('explain') }}">Explainability</a></li>
+    <li><a href="{{ url_for('whatif') }}">What-If</a></li>
+    <li><a href="{{ url_for('about') }}">About</a></li>
+  </ul>
+  <div class="landing-nav-cta">
+    <a href="{{ url_for('predict') }}" class="btn-primary-custom" style="padding:8px 20px;font-size:13.5px;">
+      <i class="bi bi-play-fill me-1"></i> Try Prediction
+    </a>
+  </div>
+</nav>
+
+<!-- ═══ HERO ══════════════════════════════════════════════════════════════════ -->
+<section class="hero-section">
+  <div class="hero-left">
+    <div class="hero-badge">
+      <i class="bi bi-stars"></i> AI-Powered Insurance Intelligence
+    </div>
+    <h1 class="hero-title">
+      Explainable &amp; Reliable<br/>
+      <span>Insurance Premium</span><br/>
+      Prediction
+    </h1>
+    <p class="hero-subtitle">
+      Explore an AI-powered insurance prediction experience with transparent explanations, prediction reliability and What-If scenarios.
+    </p>
+    <div class="hero-cta">
+      <a href="{{ url_for('predict') }}" class="btn-primary-custom" id="heroCTA" onclick="showHeroLoading(event)">
+        <i class="bi bi-calculator me-1"></i> Try Prediction
+      </a>
+      <a href="#how" class="btn-secondary-custom">
+        <i class="bi bi-arrow-down-circle me-1"></i> Explore How It Works
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="hero-preview-card">
+      <div style="position:relative;z-index:1;">
+        <div class="preview-premium-label">Estimated Annual Premium</div>
+        <div class="preview-premium-value">₹40,909</div>
+        <div class="preview-premium-sub">XGBoost ML Estimate &middot; Age 45 &middot; BMI 31.2 &middot; Smoker</div>
+
+        <div class="preview-range-row">
+          <div class="preview-range-item">
+            <div class="preview-range-lbl">Lower Bound</div>
+            <div class="preview-range-val">₹40,680</div>
+          </div>
+          <div style="width:1px;background:rgba(255,255,255,0.15);margin:0 8px;"></div>
+          <div class="preview-range-item">
+            <div class="preview-range-lbl">Estimate</div>
+            <div class="preview-range-val" style="color:var(--freesia);">₹40,909</div>
+          </div>
+          <div style="width:1px;background:rgba(255,255,255,0.15);margin:0 8px;"></div>
+          <div class="preview-range-item">
+            <div class="preview-range-lbl">Upper Bound</div>
+            <div class="preview-range-val">₹41,138</div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:6px;">Prediction Reliability</div>
+        <div class="preview-conf-bar"><div class="preview-conf-fill" style="width:95%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:18px;">
+          <span>0%</span><span>95% (Conformal)</span><span>100%</span>
+        </div>
+
+        <div class="preview-factors">
+          <div class="preview-factors-title">Top Influencing Factors (SHAP)</div>
+          <div class="preview-factor-item">
+            <div class="preview-factor-dot"></div>
+            <div class="preview-factor-name">Smoking (+₹24,100)</div>
+            <div class="preview-factor-bar"><div class="preview-factor-fill" style="width:85%"></div></div>
+          </div>
+          <div class="preview-factor-item">
+            <div class="preview-factor-dot" style="background:var(--cornflower-light);"></div>
+            <div class="preview-factor-name">BMI (+₹2,450)</div>
+            <div class="preview-factor-bar"><div class="preview-factor-fill" style="width:45%;background:var(--cornflower-light);"></div></div>
+          </div>
+          <div class="preview-factor-item">
+            <div class="preview-factor-dot" style="background:rgba(255,255,255,0.5);"></div>
+            <div class="preview-factor-name">Age (+₹1,080)</div>
+            <div class="preview-factor-bar"><div class="preview-factor-fill" style="width:30%;background:rgba(255,255,255,0.4);"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═════════════════════════════════════════════════════════════ -->
+<section class="features-section" id="features">
+  <div class="section-tag">Core Capabilities</div>
+  <h2 class="section-title">Everything You Need in One Platform</h2>
+  <p class="section-subtitle">From premium estimation to scenario simulation — Insurance AI delivers clarity and trust.</p>
+
+  <div class="row g-4 mt-4">
+    <div class="col-md-6 col-xl-3">
+      <div class="feature-card">
+        <div class="feature-num">01</div>
+        <div class="feature-icon-wrap"><i class="bi bi-calculator-fill"></i></div>
+        <div class="feature-title">Premium Prediction</div>
+        <p class="feature-desc">Estimate health insurance premiums using customer profiles in an intuitive interface.</p>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="feature-card">
+        <div class="feature-num">02</div>
+        <div class="feature-icon-wrap"><i class="bi bi-lightbulb-fill"></i></div>
+        <div class="feature-title">Explainable AI</div>
+        <p class="feature-desc">Understand which customer factors influence the estimated premium using SHAP-style feature impact visuals.</p>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="feature-card">
+        <div class="feature-num">03</div>
+        <div class="feature-icon-wrap"><i class="bi bi-shield-check"></i></div>
+        <div class="feature-title">Prediction Reliability</div>
+        <p class="feature-desc">Visualize bounded prediction intervals [Lower, Upper] to quantify model certainty.</p>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="feature-card">
+        <div class="feature-num">04</div>
+        <div class="feature-icon-wrap"><i class="bi bi-sliders2-vertical"></i></div>
+        <div class="feature-title">What-If Simulation</div>
+        <p class="feature-desc">Explore how lifestyle or demographic changes alter estimated premiums through interactive scenario testing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══════════════════════════════════════════════════════ -->
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <div class="section-tag" style="color:rgba(253,216,165,0.8);">End-to-End Workflow</div>
+    <h2 class="section-title" style="color:#fff;">How Insurance AI Works</h2>
+    <p class="section-subtitle" style="color:rgba(255,255,255,0.5);margin-bottom:48px;">A seamless 5-step user journey from profile input to actionable insight.</p>
+
+    <div class="workflow-steps">
+      <div class="wf-step">
+        <div class="wf-step-num">01</div>
+        <div class="wf-step-title">Customer Profile</div>
+        <div class="wf-step-desc">Enter age, BMI, smoking status, region, and children</div>
+      </div>
+      <div class="wf-connector"></div>
+      <div class="wf-step">
+        <div class="wf-step-num">02</div>
+        <div class="wf-step-title">Premium Estimate</div>
+        <div class="wf-step-desc">Receive an instant baseline premium estimate</div>
+      </div>
+      <div class="wf-connector"></div>
+      <div class="wf-step">
+        <div class="wf-step-num">03</div>
+        <div class="wf-step-title">Why This Prediction?</div>
+        <div class="wf-step-desc">Explore SHAP-style breakdown of contributing risk factors</div>
+      </div>
+      <div class="wf-connector"></div>
+      <div class="wf-step">
+        <div class="wf-step-num">04</div>
+        <div class="wf-step-title">Reliability</div>
+        <div class="wf-step-desc">Review confidence bounds and upper/lower ranges</div>
+      </div>
+      <div class="wf-connector"></div>
+      <div class="wf-step">
+        <div class="wf-step-num">05</div>
+        <div class="wf-step-title">What-If Scenario</div>
+        <div class="wf-step-desc">Compare original profile with modified health goals</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══════════════════════════════════════════════════════════════════ -->
+<section class="landing-cta-section">
+  <div class="cta-card">
+    <h2 class="cta-title">Ready to Predict Insurance Premium?</h2>
+    <p class="cta-subtitle">Experience calibrated XGBoost predictions and explore transparent SHAP explanations.</p>
+    <div style="position:relative;z-index:1;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('predict') }}" class="btn-primary-custom" style="background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);">
+        <i class="bi bi-calculator me-1"></i> Predict Premium
+      </a>
+      <a href="{{ url_for('about') }}" class="btn-secondary-custom" style="border-color:rgba(255,255,255,0.3);color:#fff;">
+        <i class="bi bi-info-circle me-1"></i> About System
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ════════════════════════════════════════════════════════════════ -->
+<footer class="landing-footer">
+  <p><strong>Insurance AI</strong> &mdash; Explainable &amp; Reliable Insurance Premium Prediction</p>
+  <p style="margin-top:6px;">Predictive risk intelligence powered by calibrated XGBoost and SHAP feature attribution.</p>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Analyzing customer profile…</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/demo.js') }}"></script>
+<script>
+function showHeroLoading(e) {
+  e.preventDefault();
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.add('active');
+  setTimeout(() => { window.location.href = e.target.closest('a').href; }, 800);
+}
+</script>
+</body>
+</html>

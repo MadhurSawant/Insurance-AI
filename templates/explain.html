@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Explainability – Insurance AI{% endblock %}
+{% block meta_desc %}SHAP feature impact and explainable AI analysis for Insurance Premium predictions.{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Why This Premium?</h1>
+    <p class="page-subtitle">Detailed SHAP (SHapley Additive exPlanations) feature attribution for the customer's predicted premium.</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-bold">
+      <i class="bi bi-cpu-fill me-1"></i> SHAP TreeExplainer
+    </span>
+  </div>
+</div>
+
+<!-- CUSTOMER PROFILE PILL BAR -->
+<div class="card mb-4 bg-light border">
+  <div class="card-body-custom py-2 px-3">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 small">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-person-badge text-primary fs-5"></i>
+        <strong class="text-primary">Evaluated Customer:</strong>
+        <span>Age <strong>{{ patient.age }}</strong></span> &bull;
+        <span>Sex <strong>{{ patient.sex|capitalize }}</strong></span> &bull;
+        <span>BMI <strong>{{ "%.1f"|format(patient.bmi|float) }}</strong></span> &bull;
+        <span>Smoking <strong>{{ 'Smoker' if patient.smoker == 'yes' else 'Non-Smoker' }}</strong></span> &bull;
+        <span>Children <strong>{{ patient.children }}</strong></span> &bull;
+        <span>Region <strong>{{ patient.region|capitalize }}</strong></span>
+      </div>
+      <a href="{{ url_for('predict') }}" class="btn btn-sm btn-link text-decoration-none p-0">
+        <i class="bi bi-pencil-square"></i> Change Profile
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- TOP KPI CARDS -->
+<div class="row g-4 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="kpi-card freesia">
+      <div class="kpi-icon-wrap freesia">
+        <i class="bi bi-exclamation-diamond-fill"></i>
+      </div>
+      <div class="kpi-value">
+        {% if factors and factors|length > 0 %}
+          {{ factors[0].name }}
+        {% else %}
+          Demographics
+        {% endif %}
+      </div>
+      <div class="kpi-label">Top Driving Factor</div>
+      <div class="kpi-change {% if factors and factors[0].shap_value is defined and factors[0].shap_value > 0 %}text-danger{% elif factors and factors[0].shap_value is defined and factors[0].shap_value < 0 %}text-success{% else %}text-muted{% endif %}">
+        {% if factors and factors[0].shap_value is defined %}
+          {% if factors[0].shap_value > 0 %}+{% endif %}₹{{ "{:,.2f}".format(factors[0].shap_value) }} impact
+        {% else %}
+          Primary risk driver
+        {% endif %}
+      </div>
+      <div class="kpi-demo-label">SHAP Feature Attribution</div>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="kpi-card navy">
+      <div class="kpi-icon-wrap navy">
+        <i class="bi bi-person-heart"></i>
+      </div>
+      <div class="kpi-value">
+        {% if factors and factors|length > 1 %}
+          {{ factors[1].name }}
+        {% else %}
+          Lifestyle
+        {% endif %}
+      </div>
+      <div class="kpi-label">Secondary Factor</div>
+      <div class="kpi-change {% if factors and factors|length > 1 and factors[1].shap_value is defined and factors[1].shap_value > 0 %}text-danger{% elif factors and factors|length > 1 and factors[1].shap_value is defined and factors[1].shap_value < 0 %}text-success{% else %}text-muted{% endif %}">
+        {% if factors and factors|length > 1 and factors[1].shap_value is defined %}
+          {% if factors[1].shap_value > 0 %}+{% endif %}₹{{ "{:,.2f}".format(factors[1].shap_value) }} impact
+        {% else %}
+          Secondary risk driver
+        {% endif %}
+      </div>
+      <div class="kpi-demo-label">SHAP Feature Attribution</div>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="kpi-card green">
+      <div class="kpi-icon-wrap green">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <div class="kpi-value">
+        {% if shap_explanation and shap_explanation.base_value is defined %}
+          ₹{{ "{:,.2f}".format(shap_explanation.base_value) }}
+        {% else %}
+          ₹13,270.42
+        {% endif %}
+      </div>
+      <div class="kpi-label">Base Expected Premium</div>
+      <div class="kpi-change text-muted">Dataset Population Mean</div>
+      <div class="kpi-demo-label">E[f(X)] Reference</div>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="kpi-card cornflower">
+      <div class="kpi-icon-wrap cornflower">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="kpi-value text-primary">
+        {% if prediction and prediction.premium is defined %}
+          ₹{{ "{:,.2f}".format(prediction.premium) }}
+        {% elif shap_explanation and shap_explanation.prediction is defined %}
+          ₹{{ "{:,.2f}".format(shap_explanation.prediction) }}
+        {% else %}
+          N/A
+        {% endif %}
+      </div>
+      <div class="kpi-label">Predicted Premium</div>
+      <div class="kpi-change text-muted">E[f(X)] + &sum; SHAP</div>
+      <div class="kpi-demo-label">Final ML Output</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURE IMPACT BREAKDOWN -->
+<div class="row g-4 mb-4">
+  <!-- WATERFALL PLOT -->
+  <div class="col-12 col-xl-7">
+    <div class="chart-card h-100">
+      <div class="chart-card-header">
+        <div class="chart-card-title">
+          <i class="bi bi-waterfall me-2 text-primary"></i>SHAP Waterfall Contribution Plot
+        </div>
+        <span class="badge bg-primary-subtle text-primary px-2 py-1">Exact Model TreeExplainer</span>
+      </div>
+      <div class="chart-card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 text-muted small flex-wrap gap-2">
+          <span>Base Value E[f(X)]: <strong>₹{{ "{:,.2f}".format(shap_explanation.base_value) if shap_explanation else "13,270.42" }}</strong></span>
+          <i class="bi bi-arrow-right"></i>
+          <span>Predicted Premium f(x): <strong class="text-primary fs-6">₹{{ "{:,.2f}".format(prediction.premium) if prediction else "{:,.2f}".format(shap_explanation.prediction) if shap_explanation else "" }}</strong></span>
+        </div>
+
+        {% if shap_plot %}
+          <div class="text-center p-2">
+            <img src="{{ shap_plot }}" alt="SHAP Waterfall Plot" class="img-fluid rounded border shadow-sm" style="max-height: 440px; width: 100%; object-fit: contain;">
+          </div>
+        {% else %}
+          <div style="height: 320px; position: relative;">
+            <canvas id="shapWaterfallChart"></canvas>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPACT RANKING -->
+  <div class="col-12 col-xl-5">
+    <div class="card h-100">
+      <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-list-stars me-2 text-primary"></i>Factor Impact Ranking</span>
+        <span class="badge bg-secondary-subtle text-secondary px-2 py-1">Ranked by |SHAP|</span>
+      </div>
+      <div class="card-body-custom">
+        {% if factors %}
+          {% set max_shap = factors[0].absolute_shap if (factors[0].absolute_shap is defined and factors[0].absolute_shap > 0) else 1 %}
+          {% for factor in factors %}
+          <div class="impact-row">
+            <div class="impact-header">
+              <span class="impact-name">
+                {% if factor.feature == 'smoker' or 'smoke' in factor.feature|lower %}
+                  <i class="bi bi-fire text-danger me-2"></i>
+                {% elif factor.feature == 'bmi' %}
+                  <i class="bi bi-activity text-warning me-2"></i>
+                {% elif factor.feature == 'age' %}
+                  <i class="bi bi-calendar-event text-info me-2"></i>
+                {% elif factor.feature == 'children' %}
+                  <i class="bi bi-people text-secondary me-2"></i>
+                {% elif 'region' in factor.feature|lower %}
+                  <i class="bi bi-geo-alt text-success me-2"></i>
+                {% else %}
+                  <i class="bi bi-person text-secondary me-2"></i>
+                {% endif %}
+                {{ factor.name }}
+                {% if factor.value is defined and factor.value is not none %}
+                  <span class="fw-normal text-muted">({{ factor.value }})</span>
+                {% endif %}
+              </span>
+              <span class="impact-label">
+                {% if factor.shap_value is defined %}
+                  <strong class="{% if factor.shap_value > 0 %}text-danger{% elif factor.shap_value < 0 %}text-success{% else %}text-muted{% endif %}">
+                    {% if factor.shap_value > 0 %}+{% endif %}₹{{ "{:,.2f}".format(factor.shap_value) }}
+                  </strong>
+                {% else %}
+                  {{ factor.impact }}
+                {% endif %}
+              </span>
+            </div>
+            <div class="impact-bar-bg">
+              <div class="impact-bar-fill {% if factor.shap_value is defined and factor.shap_value < 0 %}negative{% else %}positive{% endif %}"
+                   style="width: {{ [100, ((factor.absolute_shap / max_shap) * 100)]|min|round }}%;"></div>
+            </div>
+            {% if factor.effect_text is defined %}
+              <div class="extra-small text-muted mt-1">{{ factor.effect_text }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-muted small py-4 text-center">No SHAP attribution factors available.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACTION BUTTONS -->
+<div class="card mb-4">
+  <div class="card-body-custom">
+    <div class="d-flex gap-3 flex-wrap justify-content-between align-items-center">
+      <a href="{{ url_for('result') }}" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left me-1"></i> Back to Result
+      </a>
+      <a href="{{ url_for('whatif') }}" class="btn-primary-custom">
+        <i class="bi bi-sliders2 me-1"></i> Try What-If Scenario
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

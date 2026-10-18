@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}What-If Simulator – Insurance AI{% endblock %}
+{% block meta_desc %}Interactive scenario simulator to evaluate how health and lifestyle changes affect your insurance premium.{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">What-If Scenario Simulator</h1>
+    <p class="page-subtitle">Test modifications to lifestyle factors, BMI, and age to explore model-predicted premium changes.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-sm btn-secondary-custom" onclick="resetWhatIfScenario()">
+      <i class="bi bi-arrow-counterclockwise"></i> Reset Scenario
+    </button>
+  </div>
+</div>
+
+<!-- CUSTOMER PROFILE PILL BAR -->
+<div class="card mb-4 bg-light border">
+  <div class="card-body-custom py-2 px-3">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 small">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-person-badge text-primary fs-5"></i>
+        <strong class="text-primary">Baseline Customer:</strong>
+        <span>Age <strong>{{ baseline_patient.age }}</strong></span> &bull;
+        <span>Sex <strong>{{ baseline_patient.sex|capitalize }}</strong></span> &bull;
+        <span>BMI <strong>{{ "%.1f"|format(baseline_patient.bmi|float) }}</strong></span> &bull;
+        <span>Smoking <strong>{{ 'Smoker' if baseline_patient.smoker == 'yes' else 'Non-Smoker' }}</strong></span> &bull;
+        <span>Children <strong>{{ baseline_patient.children }}</strong></span> &bull;
+        <span>Region <strong>{{ baseline_patient.region|capitalize }}</strong></span>
+      </div>
+      <a href="{{ url_for('predict') }}" class="btn btn-sm btn-link text-decoration-none p-0">
+        <i class="bi bi-pencil-square"></i> New Customer
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- LEFT PANEL: SCENARIO BUILDER -->
+  <div class="col-12 col-xl-5">
+    <div class="card h-100">
+      <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-sliders me-2 text-primary"></i>Scenario Parameters</span>
+        <span class="badge bg-secondary-subtle text-secondary px-2 py-1">Interactive Simulation</span>
+      </div>
+      <div class="card-body-custom">
+        <form id="whatifForm" onsubmit="return false;">
+          <!-- Smoking Status -->
+          <div class="mb-4 p-3 bg-light rounded-3 border">
+            <label class="form-label fw-bold text-primary mb-2 d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-fire text-danger me-1"></i> Smoking Status</span>
+              <span class="badge {% if baseline_patient.smoker == 'yes' %}bg-danger{% else %}bg-success{% endif %} text-white px-2 py-1" id="whatifSmokeBadge">
+                {{ 'Smoker (Yes)' if baseline_patient.smoker == 'yes' else 'Non-Smoker (No)' }}
+              </span>
+            </label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="whatif_smoking" id="smoke_yes" value="yes" {% if baseline_patient.smoker == 'yes' %}checked{% endif %} onchange="updateWhatIf()">
+              <label class="btn btn-outline-danger" for="smoke_yes">Smoker</label>
+              <input type="radio" class="btn-check" name="whatif_smoking" id="smoke_no" value="no" {% if baseline_patient.smoker != 'yes' %}checked{% endif %} onchange="updateWhatIf()">
+              <label class="btn btn-outline-success" for="smoke_no">Non-Smoker</label>
+            </div>
+          </div>
+
+          <!-- BMI Slider -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-bold mb-0">Body Mass Index (BMI)</label>
+              <span class="fw-bold text-primary fs-5" id="whatifBmiVal">{{ "%.1f"|format(baseline_patient.bmi|float) }}</span>
+            </div>
+            <input type="range" class="form-range" id="whatifBmi" min="15.0" max="50.0" step="0.1" value="{{ baseline_patient.bmi }}" oninput="updateWhatIf()">
+            <div class="d-flex justify-content-between text-muted extra-small">
+              <span>18.5 (Normal)</span>
+              <span>25.0 (Overweight)</span>
+              <span>30.0+ (Obese)</span>
+            </div>
+          </div>
+
+          <!-- Age Slider -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-bold mb-0">Age (Years)</label>
+              <span class="fw-bold text-primary fs-5" id="whatifAgeVal">{{ baseline_patient.age }}</span>
+            </div>
+            <input type="range" class="form-range" id="whatifAge" min="18" max="70" step="1" value="{{ baseline_patient.age }}" oninput="updateWhatIf()">
+            <div class="d-flex justify-content-between text-muted extra-small">
+              <span>18 yrs</span>
+              <span>45 yrs</span>
+              <span>70 yrs</span>
+            </div>
+          </div>
+
+          <!-- Children -->
+          <div class="mb-4">
+            <label class="form-label fw-bold mb-1">Number of Children</label>
+            <input type="number" class="form-control" id="whatifChildren" value="{{ baseline_patient.children }}" min="0" max="5" onchange="updateWhatIf()" style="width: 120px;">
+          </div>
+
+          <!-- Region -->
+          <div class="mb-3">
+            <label class="form-label fw-bold mb-1">Region</label>
+            <select class="form-select" id="whatifRegion" onchange="updateWhatIf()">
+              <option value="southeast" {% if baseline_patient.region == 'southeast' %}selected{% endif %}>Southeast</option>
+              <option value="southwest" {% if baseline_patient.region == 'southwest' %}selected{% endif %}>Southwest</option>
+              <option value="northeast" {% if baseline_patient.region == 'northeast' %}selected{% endif %}>Northeast</option>
+              <option value="northwest" {% if baseline_patient.region == 'northwest' %}selected{% endif %}>Northwest</option>
+            </select>
+          </div>
+
+          <div class="mt-4">
+            <button class="btn btn-primary-custom w-100 justify-content-center" onclick="updateWhatIf()">
+              <i class="bi bi-arrow-repeat me-1"></i> Recalculate Scenario
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: SIMULATION RESULTS & COMPARISON -->
+  <div class="col-12 col-xl-7">
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-sm-6">
+        <div class="kpi-card navy text-center">
+          <div class="kpi-label">Original Baseline Premium</div>
+          <div class="kpi-value my-2" id="origPremiumDisplay">₹{{ "{:,.2f}".format(baseline.premium) if baseline else "6,925.43" }}</div>
+          <div class="extra-small text-muted" id="baselineDesc">
+            Baseline ({{ 'Smoker' if baseline_patient.smoker == 'yes' else 'Non-Smoker' }}, BMI {{ "%.1f"|format(baseline_patient.bmi|float) }}, Age {{ baseline_patient.age }})
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6">
+        <div class="kpi-card green text-center">
+          <div class="kpi-label">Scenario Premium</div>
+          <div class="kpi-value my-2 text-primary" id="simPremiumDisplay">₹{{ "{:,.2f}".format(baseline.premium) if baseline else "6,925.43" }}</div>
+          <div class="extra-small text-muted" id="simSavingsDisplay">Identical to baseline</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARISON CHART -->
+    <div class="chart-card mb-4">
+      <div class="chart-card-header">
+        <div class="chart-card-title">
+          <i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>Baseline vs Scenario Premium Comparison
+        </div>
+        <span class="badge bg-secondary-subtle text-secondary px-2 py-1 fw-bold" id="savingsBadge">0% Difference</span>
+      </div>
+      <div class="chart-card-body">
+        <div style="height: 250px; position: relative;">
+          <canvas id="whatifChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO SUMMARY / DYNAMIC ATTRIBUTION -->
+    <div class="card">
+      <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-award-fill me-2 text-warning"></i>Scenario Risk Impact Summary</span>
+      </div>
+      <div class="card-body-custom" id="scenarioChangesContainer">
+        <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
+          <div class="rounded-circle p-2 bg-success-subtle text-success fs-4">
+            <i class="bi bi-heart-pulse-fill"></i>
+          </div>
+          <div>
+            <h6 class="fw-bold mb-1">Smoking Impact</h6>
+            <p class="small text-muted mb-0">Switching smoking status produces the single largest shift in estimated insurance risk.</p>
+          </div>
+        </div>
+        <div class="d-flex align-items-start gap-3">
+          <div class="rounded-circle p-2 bg-info-subtle text-info fs-4">
+            <i class="bi bi-activity"></i>
+          </div>
+          <div>
+            <h6 class="fw-bold mb-1">BMI Optimization</h6>
+            <p class="small text-muted mb-0">Maintaining a normal BMI (18.5 – 24.9) significantly reduces statistical premium weight.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const baselinePatient = {{ baseline_patient | tojson }};
+const baselinePremium = parseFloat("{{ baseline.premium if baseline else 6925.43 }}");
+
+let debounceTimer = null;
+
+function updateWhatIf() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(performWhatIfCall, 100);
+}
+
+function performWhatIfCall() {
+  const smokeRadio = document.querySelector('input[name="whatif_smoking"]:checked');
+  const smoke = smokeRadio ? smokeRadio.value : baselinePatient.smoker;
+  const bmi = parseFloat(document.getElementById('whatifBmi').value) || baselinePatient.bmi;
+  const age = parseInt(document.getElementById('whatifAge').value) || baselinePatient.age;
+  const children = parseInt(document.getElementById('whatifChildren').value) || 0;
+  const region = document.getElementById('whatifRegion').value || baselinePatient.region;
+
+  document.getElementById('whatifBmiVal').innerText = bmi.toFixed(1);
+  document.getElementById('whatifAgeVal').innerText = age;
+
+  const badge = document.getElementById('whatifSmokeBadge');
+  if (smoke === 'yes') {
+    badge.className = 'badge bg-danger text-white px-2 py-1';
+    badge.innerText = 'Smoker (Yes)';
+  } else {
+    badge.className = 'badge bg-success text-white px-2 py-1';
+    badge.innerText = 'Non-Smoker (No)';
+  }
+
+  const scenarioPatient = {
+    ...baselinePatient,
+    age: age,
+    bmi: bmi,
+    smoker: smoke,
+    children: children,
+    region: region
+  };
+
+  fetch("{{ url_for('api_whatif') }}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      baseline: baselinePatient,
+      scenario: scenarioPatient
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.success || !data.result) return;
+    const res = data.result;
+    const simPremium = res.scenario.prediction;
+    const diff = res.premium_change;
+    const pct = res.percent_change;
+
+    document.getElementById('simPremiumDisplay').innerText = '₹' + simPremium.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const savingsDisplay = document.getElementById('simSavingsDisplay');
+    const badgeDisplay = document.getElementById('savingsBadge');
+
+    if (diff < -0.5) {
+      const absDiff = Math.abs(diff);
+      const absPct = Math.abs(pct);
+      savingsDisplay.className = 'extra-small text-success fw-bold';
+      savingsDisplay.innerText = `Saves ₹${absDiff.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${absPct.toFixed(1)}% reduction)`;
+      badgeDisplay.className = 'badge bg-success-subtle text-success px-2 py-1 fw-bold';
+      badgeDisplay.innerText = `${absPct.toFixed(1)}% Reduction`;
+    } else if (diff > 0.5) {
+      savingsDisplay.className = 'extra-small text-danger fw-bold';
+      savingsDisplay.innerText = `Increases ₹${diff.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (+${pct.toFixed(1)}%)`;
+      badgeDisplay.className = 'badge bg-danger-subtle text-danger px-2 py-1 fw-bold';
+      badgeDisplay.innerText = `+${pct.toFixed(1)}% Increase`;
+    } else {
+      savingsDisplay.className = 'extra-small text-muted';
+      savingsDisplay.innerText = 'Identical to baseline';
+      badgeDisplay.className = 'badge bg-secondary-subtle text-secondary px-2 py-1 fw-bold';
+      badgeDisplay.innerText = '0% Difference';
+    }
+
+    if (window.whatifChart) {
+      window.whatifChart.data.datasets[0].data = [baselinePremium, simPremium];
+      window.whatifChart.update();
+    }
+
+    // Dynamic Scenario Summary
+    if (res.changes && res.changes.length > 0) {
+      let html = '';
+      res.changes.forEach(ch => {
+        const isBetter = ch.effect < 0;
+        const icon = isBetter ? 'bi-arrow-down-circle-fill text-success' : 'bi-arrow-up-circle-fill text-danger';
+        const bg = isBetter ? 'bg-success-subtle' : 'bg-danger-subtle';
+        html += `
+          <div class="d-flex align-items-start gap-3 mb-2 pb-2 border-bottom">
+            <div class="rounded-circle p-2 ${bg} fs-5"><i class="bi ${icon}"></i></div>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0">${ch.name}: ${ch.from} &rarr; ${ch.to}</h6>
+                <strong class="${isBetter ? 'text-success' : 'text-danger'} small">
+                  ${ch.effect > 0 ? '+' : ''}₹${Math.round(ch.effect).toLocaleString('en-IN')}
+                </strong>
+              </div>
+              <p class="extra-small text-muted mb-0">Model sensitivity: ${ch.direction}s predicted premium by ₹${Math.abs(Math.round(ch.effect)).toLocaleString('en-IN')}.</p>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById('scenarioChangesContainer').innerHTML = html;
+    } else {
+      document.getElementById('scenarioChangesContainer').innerHTML = `
+        <div class="text-muted small py-2 text-center">
+          <i class="bi bi-info-circle me-1"></i> Modify any parameter on the left to see individual feature effects.
+        </div>
+      `;
+    }
+  })
+  .catch(err => {
+    console.error("Whatif API error:", err);
+  });
+}
+
+function resetWhatIfScenario() {
+  const isSmoker = (baselinePatient.smoker === 'yes');
+  document.getElementById('smoke_yes').checked = isSmoker;
+  document.getElementById('smoke_no').checked = !isSmoker;
+  document.getElementById('whatifBmi').value = baselinePatient.bmi;
+  document.getElementById('whatifAge').value = baselinePatient.age;
+  document.getElementById('whatifChildren').value = baselinePatient.children;
+  document.getElementById('whatifRegion').value = baselinePatient.region;
+
+  updateWhatIf();
+  showToast('Scenario parameters reset to customer baseline.', 'info');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById("whatifChart");
+  if (el && typeof Chart !== 'undefined') {
+    window.whatifChart = new Chart(el, {
+      type: "bar",
+      data: {
+        labels: ["Baseline Profile", "Modified Scenario"],
+        datasets: [{
+          label: "Estimated Premium (₹)",
+          data: [baselinePremium, baselinePremium],
+          backgroundColor: ["#0b306b", "#16796f"],
+          borderRadius: 8,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` Premium: ₹${Number(ctx.raw).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            ticks: { callback: v => "₹" + (v/1000).toFixed(0) + "K" },
+            grid: { color: "rgba(0,0,0,0.04)" }
+          }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

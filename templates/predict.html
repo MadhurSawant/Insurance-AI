@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% block title %}Predict Premium – Insurance AI{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Calculate Insurance Premium</h1>
+    <p class="page-subtitle">Enter customer profile information to calculate the explainable insurance premium estimate.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- FORM -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-person-fill" style="color:var(--cornflower);"></i> Customer Information</span>
+      </div>
+      <div class="card-body-custom">
+        <form id="predictForm" action="{{ url_for('predict') }}" method="POST" onsubmit="submitPrediction(event)">
+          <!-- Hidden inputs for toggle values -->
+          <input type="hidden" name="sex" id="sexInput" value="{{ patient.sex|default('male') }}" />
+          <input type="hidden" name="smoker" id="smokerInput" value="{{ patient.smoker|default('no') }}" />
+
+          <div class="row g-3">
+            <!-- Age -->
+            <div class="col-md-6">
+              <label class="form-label-custom" for="ageSlider">Age</label>
+              <div class="d-flex align-items-center gap-3">
+                <input type="range" id="ageSlider" name="age" class="slider-custom flex-1" min="18" max="70" value="{{ patient.age|default(35) }}" oninput="updateSlider('age', this.value)" />
+                <span class="slider-value" id="ageVal">{{ patient.age|default(35) }}</span>
+              </div>
+            </div>
+
+            <!-- BMI -->
+            <div class="col-md-6">
+              <label class="form-label-custom" for="bmiSlider">BMI (Body Mass Index)</label>
+              <div class="d-flex align-items-center gap-3">
+                <input type="range" id="bmiSlider" name="bmi" class="slider-custom flex-1" min="15" max="50" value="{{ patient.bmi|default(27.0) }}" step="0.1" oninput="updateSlider('bmi', parseFloat(this.value).toFixed(1))" />
+                <span class="slider-value" id="bmiVal">{{ "%.1f"|format(patient.bmi|default(27.0)|float) }}</span>
+              </div>
+            </div>
+
+            <!-- Sex -->
+            <div class="col-md-6">
+              <label class="form-label-custom">Sex</label>
+              <div class="toggle-group" id="sexToggle">
+                <button type="button" class="toggle-option {% if patient.sex|default('male') == 'male' %}active{% endif %}" onclick="setToggle('sex', 'male', this)">Male</button>
+                <button type="button" class="toggle-option {% if patient.sex|default('male') == 'female' %}active{% endif %}" onclick="setToggle('sex', 'female', this)">Female</button>
+              </div>
+            </div>
+
+            <!-- Smoking -->
+            <div class="col-md-6">
+              <label class="form-label-custom">Smoking Status</label>
+              <div class="toggle-group" id="smokingToggle">
+                <button type="button" class="toggle-option {% if patient.smoker|default('no') != 'yes' %}active{% endif %}" onclick="setToggle('smoker', 'no', this)">Non-Smoker</button>
+                <button type="button" class="toggle-option {% if patient.smoker|default('no') == 'yes' %}active{% endif %}" onclick="setToggle('smoker', 'yes', this)">Smoker</button>
+              </div>
+            </div>
+
+            <!-- Children -->
+            <div class="col-md-6">
+              <label class="form-label-custom" for="childrenSelect">Number of Children</label>
+              <select id="childrenSelect" name="children" class="form-control-custom" onchange="updateProfile()">
+                {% set cur_children = patient.children|default(2)|int %}
+                <option value="0" {% if cur_children == 0 %}selected{% endif %}>0 – No children</option>
+                <option value="1" {% if cur_children == 1 %}selected{% endif %}>1</option>
+                <option value="2" {% if cur_children == 2 %}selected{% endif %}>2</option>
+                <option value="3" {% if cur_children == 3 %}selected{% endif %}>3</option>
+                <option value="4" {% if cur_children == 4 %}selected{% endif %}>4</option>
+                <option value="5" {% if cur_children == 5 %}selected{% endif %}>5</option>
+              </select>
+            </div>
+
+            <!-- Region -->
+            <div class="col-md-6">
+              <label class="form-label-custom" for="regionSelect">Region</label>
+              <select id="regionSelect" name="region" class="form-control-custom" onchange="updateProfile()">
+                {% set cur_region = patient.region|default('southeast')|lower %}
+                <option value="northeast" {% if cur_region == 'northeast' %}selected{% endif %}>Northeast</option>
+                <option value="northwest" {% if cur_region == 'northwest' %}selected{% endif %}>Northwest</option>
+                <option value="southeast" {% if cur_region == 'southeast' %}selected{% endif %}>Southeast</option>
+                <option value="southwest" {% if cur_region == 'southwest' %}selected{% endif %}>Southwest</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-4 d-flex gap-3 flex-wrap">
+            <button type="submit" class="btn-primary-custom" id="predictBtn">
+              <i class="bi bi-calculator"></i> Predict Premium
+            </button>
+            <button type="button" class="btn-secondary-custom" onclick="resetForm()">
+              <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE PREVIEW -->
+  <div class="col-lg-4">
+    <div class="profile-preview-card" id="profileCard">
+      <div class="profile-header">
+        <div class="profile-avatar-lg"><i class="bi bi-person-fill"></i></div>
+        <div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:15px;">Customer Profile</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.65);">Model Input Summary</div>
+        </div>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Age</span>
+        <span class="profile-stat-value" id="prevAge">{{ patient.age|default(35) }}</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">BMI</span>
+        <span class="profile-stat-value" id="prevBMI">{{ "%.1f"|format(patient.bmi|default(27.0)|float) }}</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Sex</span>
+        <span class="profile-stat-value" id="prevSex">{{ patient.sex|default('male')|capitalize }}</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Smoking</span>
+        <span class="profile-stat-value" id="prevSmoking">{{ 'Yes' if patient.smoker|default('no') == 'yes' else 'No' }}</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Children</span>
+        <span class="profile-stat-value" id="prevChildren">{{ patient.children|default(2) }}</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Region</span>
+        <span class="profile-stat-value" id="prevRegion">{{ patient.region|default('southeast')|capitalize }}</span>
+      </div>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.15);">
+        <div style="font-size:10.5px;color:rgba(255,255,255,0.7);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Live Model Estimate</div>
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--freesia);" id="quickEstimate">Calculating…</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;" id="quickRange">95% Conformal Confidence Interval</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const formState = {
+  age: parseInt("{{ patient.age|default(35) }}") || 35,
+  bmi: parseFloat("{{ patient.bmi|default(27.0) }}") || 27.0,
+  sex: "{{ patient.sex|default('male') }}",
+  smoker: "{{ patient.smoker|default('no') }}",
+  children: parseInt("{{ patient.children|default(2) }}") || 2,
+  region: "{{ patient.region|default('southeast') }}"
+};
+
+let liveEstimateTimeout = null;
+
+function updateSlider(field, val) {
+  document.getElementById(field + 'Val').textContent = val;
+  formState[field] = parseFloat(val);
+  updateProfile();
+}
+
+function setToggle(field, val, btn) {
+  formState[field] = val;
+  if (field === 'sex') {
+    document.getElementById('sexInput').value = val;
+  } else if (field === 'smoker') {
+    document.getElementById('smokerInput').value = val;
+  }
+  const group = btn.parentElement;
+  group.querySelectorAll('.toggle-option').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateProfile();
+}
+
+function fetchLiveEstimate() {
+  clearTimeout(liveEstimateTimeout);
+  liveEstimateTimeout = setTimeout(() => {
+    fetch("{{ url_for('api_predict') }}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formState)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.prediction) {
+        document.getElementById('quickEstimate').textContent = '₹' + Math.round(data.prediction.premium).toLocaleString('en-IN');
+        document.getElementById('quickRange').textContent = 'Range: ₹' + Math.round(data.prediction.lower).toLocaleString('en-IN') + ' – ₹' + Math.round(data.prediction.upper).toLocaleString('en-IN');
+      }
+    })
+    .catch(() => {
+      document.getElementById('quickEstimate').textContent = 'Ready to Predict';
+    });
+  }, 180);
+}
+
+function updateProfile() {
+  document.getElementById('prevAge').textContent      = formState.age;
+  document.getElementById('prevBMI').textContent      = parseFloat(formState.bmi).toFixed(1);
+  document.getElementById('prevSex').textContent      = formState.sex === 'female' ? 'Female' : 'Male';
+  document.getElementById('prevSmoking').textContent  = formState.smoker === 'yes' ? 'Yes' : 'No';
+  document.getElementById('prevChildren').textContent = document.getElementById('childrenSelect').value;
+  document.getElementById('prevRegion').textContent   = document.getElementById('regionSelect').options[document.getElementById('regionSelect').selectedIndex].text;
+
+  formState.children = parseInt(document.getElementById('childrenSelect').value);
+  formState.region   = document.getElementById('regionSelect').value;
+
+  fetchLiveEstimate();
+}
+
+function resetForm() {
+  document.getElementById('ageSlider').value = 35;
+  document.getElementById('bmiSlider').value = 27;
+  document.getElementById('ageVal').textContent = '35';
+  document.getElementById('bmiVal').textContent = '27.0';
+  document.getElementById('childrenSelect').value = '2';
+  document.getElementById('regionSelect').value = 'southeast';
+  document.getElementById('sexInput').value = 'male';
+  document.getElementById('smokerInput').value = 'no';
+
+  Object.assign(formState, { age: 35, bmi: 27.0, sex: 'male', smoker: 'no', children: 2, region: 'southeast' });
+
+  document.getElementById('sexToggle').querySelectorAll('.toggle-option').forEach((b, idx) => {
+    b.classList.toggle('active', idx === 0);
+  });
+  document.getElementById('smokingToggle').querySelectorAll('.toggle-option').forEach((b, idx) => {
+    b.classList.toggle('active', idx === 0);
+  });
+
+  updateProfile();
+  showToast('Form reset to default profile.', 'info');
+}
+
+let isSubmitting = false;
+function submitPrediction(e) {
+  if (isSubmitting) return;
+  e.preventDefault();
+  isSubmitting = true;
+  showLoading('Computing ML prediction & SHAP attribution…', () => {
+    document.getElementById('predictForm').submit();
+  }, 600);
+}
+
+document.addEventListener('DOMContentLoaded', updateProfile);
+</script>
+{% endblock %}
+

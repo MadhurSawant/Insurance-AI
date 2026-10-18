@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}About – Insurance AI{% endblock %}
+{% block meta_desc %}Overview of the Explainable & Reliable Insurance Premium Prediction System architecture and features.{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">About Insurance AI</h1>
+    <p class="page-subtitle">An explainable &amp; reliable insurance premium prediction system</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('predict') }}" class="btn btn-primary-custom">
+      <i class="bi bi-calculator me-1"></i> Predict Premium
+    </a>
+  </div>
+</div>
+
+<!-- HERO BANNER -->
+<div class="card mb-4 overflow-hidden border-0 text-white" style="background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);">
+  <div class="card-body p-4 p-md-5">
+    <div class="row align-items-center g-4">
+      <div class="col-12 col-lg-8">
+        <span class="badge bg-warning text-dark fw-bold mb-3 px-3 py-2 rounded-pill"><i class="bi bi-shield-check"></i> EXPLAINABLE AI IN INSURANCE</span>
+        <h2 class="display-6 fw-bold text-white mb-3">Transparent &amp; Reliable Insurance Premium Prediction</h2>
+        <p class="lead text-white-50 mb-4">Insurance AI bridges the trust gap between complex predictive models and policyholder clarity. By combining premium estimation with SHAP-style feature explainability, conformal prediction intervals, and What-If scenario testing, we provide a transparent insurance pricing experience.</p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{{ url_for('predict') }}" class="btn btn-warning fw-bold px-4 py-2">
+            Try Prediction <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+          <a href="{{ url_for('explain') }}" class="btn btn-outline-light px-4 py-2">
+            <i class="bi bi-lightbulb me-1"></i> Explore Explainability
+          </a>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4 text-center">
+        <i class="bi bi-shield-lock-fill display-1 text-warning opacity-75"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 CORE PILLARS -->
+<div class="row g-4 mb-4">
+  <div class="col-12 col-md-6 col-xl-3">
+    <div class="card h-100 p-4">
+      <div class="kpi-icon-wrap navy mb-3">
+        <i class="bi bi-calculator-fill"></i>
+      </div>
+      <h5 class="fw-bold">Premium Prediction</h5>
+      <p class="small text-muted mb-0">Estimate health insurance risk premiums using individual customer profile attributes.</p>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-xl-3">
+    <div class="card h-100 p-4">
+      <div class="kpi-icon-wrap freesia mb-3">
+        <i class="bi bi-lightbulb-fill"></i>
+      </div>
+      <h5 class="fw-bold">Explainability (SHAP)</h5>
+      <p class="small text-muted mb-0">SHAP-style feature attribution quantifies the exact contribution of every demographic factor.</p>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-xl-3">
+    <div class="card h-100 p-4">
+      <div class="kpi-icon-wrap green mb-3">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <h5 class="fw-bold">Reliability (Conformal)</h5>
+      <p class="small text-muted mb-0">Conformal prediction delivers mathematically bounded coverage intervals [Lower, Upper].</p>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-xl-3">
+    <div class="card h-100 p-4">
+      <div class="kpi-icon-wrap cornflower mb-3">
+        <i class="bi bi-sliders2-vertical"></i>
+      </div>
+      <h5 class="fw-bold">What-If Analysis</h5>
+      <p class="small text-muted mb-0">Interactive scenario simulation allows users to test lifestyle changes and potential savings.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TECHNOLOGY STACK -->
+<div class="card mb-4">
+  <div class="card-header-custom">
+    <span class="card-title-custom"><i class="bi bi-cpu me-2 text-primary"></i>Technology Overview</span>
+  </div>
+  <div class="card-body-custom">
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 text-center bg-light">
+          <i class="bi bi-filetype-py fs-2 text-primary mb-2"></i>
+          <h6 class="fw-bold mb-0">Python &amp; Flask</h6>
+          <span class="extra-small text-muted">Backend Web Server</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 text-center bg-light">
+          <i class="bi bi-diagram-3 fs-2 text-success mb-2"></i>
+          <h6 class="fw-bold mb-0">Machine Learning</h6>
+          <span class="extra-small text-muted">Predictive Regressors</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 text-center bg-light">
+          <i class="bi bi-lightbulb fs-2 text-warning mb-2"></i>
+          <h6 class="fw-bold mb-0">SHAP</h6>
+          <span class="extra-small text-muted">Explainable AI</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 border rounded-3 text-center bg-light">
+          <i class="bi bi-shield-check fs-2 text-info mb-2"></i>
+          <h6 class="fw-bold mb-0">Conformal Prediction</h6>
+          <span class="extra-small text-muted">Reliability &amp; MAPIE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODEL INTEGRATION NOTICE -->
+<div class="alert alert-success border-success-subtle bg-success-subtle text-success-emphasis shadow-sm rounded-3 d-flex align-items-center gap-3 p-4 mb-4" role="alert">
+  <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+  <div>
+    <h6 class="fw-bold mb-1">Machine Learning Model Active</h6>
+    <p class="mb-0 small">This application is powered by the trained XGBoost regression model with SHAP TreeExplainer for local feature attributions and conformal intervals for quantified prediction reliability.</p>
+  </div>
+</div>
+{% endblock %}

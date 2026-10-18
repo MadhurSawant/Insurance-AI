@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Insurance AI – Explainable Premium Prediction{% endblock %}</title>
+  <meta name="description" content="{% block meta_desc %}Explainable & Reliable Insurance Premium Prediction System powered by AI.{% endblock %}" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}app-body{% endblock %}">
+
+{% block layout %}
+<div class="app-wrapper">
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <a href="{{ url_for('landing') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+        <div class="brand-icon">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Insurance AI</span>
+          <span class="brand-tagline">Premium Predictor</span>
+        </div>
+      </a>
+      <button class="sidebar-close d-lg-none" id="sidebarClose">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-section-label">NAVIGATION</div>
+
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('landing') }}" class="nav-item {% if request.endpoint == 'landing' %}active{% endif %}">
+        <span class="nav-icon"><i class="bi bi-house-door-fill"></i></span>
+        <span class="nav-label">Home</span>
+      </a>
+      <a href="{{ url_for('predict') }}" class="nav-item {% if request.endpoint == 'predict' %}active{% endif %}">
+        <span class="nav-icon"><i class="bi bi-calculator-fill"></i></span>
+        <span class="nav-label">Predict Premium</span>
+      </a>
+      <a href="{{ url_for('explain') }}" class="nav-item {% if request.endpoint == 'explain' %}active{% endif %}">
+        <span class="nav-icon"><i class="bi bi-lightbulb-fill"></i></span>
+        <span class="nav-label">Explainability</span>
+      </a>
+      <a href="{{ url_for('whatif') }}" class="nav-item {% if request.endpoint == 'whatif' %}active{% endif %}">
+        <span class="nav-icon"><i class="bi bi-sliders2-vertical"></i></span>
+        <span class="nav-label">What-If Simulator</span>
+      </a>
+      <a href="{{ url_for('about') }}" class="nav-item {% if request.endpoint == 'about' %}active{% endif %}">
+        <span class="nav-icon"><i class="bi bi-info-circle-fill"></i></span>
+        <span class="nav-label">About</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="px-3 mb-3">
+      <a href="{{ url_for('predict') }}" class="btn btn-primary-custom w-100 justify-content-center">
+        <i class="bi bi-play-fill me-1"></i> Try Prediction
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="text-white-50 extra-small px-3">
+        <i class="bi bi-cpu me-1"></i>
+        <span>XGBoost + SHAP AI</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ SIDEBAR OVERLAY ════════════════════════════════════════════════════ -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ═══ MAIN AREA ═════════════════════════════════════════════════════════ -->
+  <div class="main-area">
+    <!-- TOP HEADER -->
+    <header class="top-header">
+      <div class="header-left">
+        <button class="hamburger" id="hamburgerBtn">
+          <i class="bi bi-list"></i>
+        </button>
+        <div class="d-none d-md-flex align-items-center gap-2 text-muted small">
+          <i class="bi bi-shield-lock-fill text-primary"></i>
+          <span>Explainable &amp; Reliable Insurance AI System</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <a href="{{ url_for('predict') }}" class="btn btn-sm btn-primary-custom">
+          <i class="bi bi-calculator me-1"></i> Predict Premium
+        </a>
+      </div>
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <i class="bi bi-shield-check"></i>
+          <span>Insurance AI</span>
+        </div>
+        <p class="footer-tagline">Explainable &amp; Reliable Insurance Premium Prediction</p>
+        <p class="footer-disclaimer">Predictive risk intelligence powered by calibrated machine learning and SHAP feature attribution.</p>
+      </div>
+    </footer>
+  </div>
+</div>
+{% endblock %}
+
+<!-- ═══ TOAST CONTAINER ═══════════════════════════════════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══ LOADING OVERLAY ════════════════════════════════════════════════════════ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p class="loading-text" id="loadingText">Analyzing customer profile…</p>
+    <div class="loading-steps">
+      <span class="step active" id="ls1">Profile</span>
+      <i class="bi bi-arrow-right"></i>
+      <span class="step" id="ls2">Predict</span>
+      <i class="bi bi-arrow-right"></i>
+      <span class="step" id="ls3">Explain</span>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/demo.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
