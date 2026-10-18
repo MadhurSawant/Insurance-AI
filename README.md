@@ -1,4 +1,4 @@
-# Explainable & Reliable Insurance Premium Prediction (UI Demo)
+# Explainable & Reliable Insurance Premium Prediction 
 
 This version is a frontend/UI prototype built with Flask and Jinja templates. It demonstrates the intended user experience, transparent explainability flows, prediction reliability visualization, and interactive scenario testing prior to integration of the machine-learning backend.
 
